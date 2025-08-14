@@ -1,0 +1,6 @@
+# Default values for open-swe - will be populated in the next task
+# This is a YAML-formatted file.
+# Declare variables to be substituted into your templates.
+
+# Placeholder for configuration values
+replicaCount: 1

@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "open-swe.fullname" . }}-web
+  labels:
+    {{- include "open-swe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.web.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "open-swe.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "open-swe.labels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "open-swe.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.web.podSecurityContext | nindent 8 }}
+      containers:
+        - name: web
+          securityContext:
+            {{- toYaml .Values.web.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.web.image.repository }}:{{ .Values.web.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          ports:
+            - name: {{ .Values.web.service.name }}
+              containerPort: {{ .Values.web.service.targetPort }}
+              protocol: TCP
+          env:
+            # Non-sensitive environment variables from ConfigMap
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: nextPublicApiUrl
+            - name: LANGGRAPH_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: langgraphApiUrl
+            - name: OPEN_SWE_APP_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: openSweAppUrl
+            - name: GITHUB_APP_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: githubAppName
+            - name: GITHUB_APP_REDIRECT_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: githubAppRedirectUri
+            # Sensitive environment variables from Secrets
+            - name: NEXT_PUBLIC_GITHUB_APP_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: githubAppId
+            - name: GITHUB_APP_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: githubAppClientSecret
+            - name: GITHUB_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: githubAppId
+            - name: GITHUB_APP_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: githubAppPrivateKey
+            - name: SECRETS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: secretsEncryptionKey
+          livenessProbe:
+            {{- toYaml .Values.web.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.web.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          {{- with .Values.web.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.web.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.web.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.web.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.web.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

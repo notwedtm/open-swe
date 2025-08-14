@@ -1,0 +1,254 @@
+# Default values for open-swe
+# This is a YAML-formatted file.
+# Declare variables to be substituted into your templates.
+
+# Global configuration
+global:
+  # Image registry for all images
+  imageRegistry: ""
+  # Image pull secrets
+  imagePullSecrets: []
+
+# Open SWE Agent (LangGraph) configuration
+openSwe:
+  # Number of replicas
+  replicaCount: 1
+  
+  # Image configuration
+  image:
+    repository: open-swe/agent
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 2024
+    targetPort: 2024
+    name: http
+  
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  # Node selector
+  nodeSelector: {}
+  
+  # Tolerations
+  tolerations: []
+  
+  # Affinity
+  affinity: {}
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  
+  # Pod security context
+  podSecurityContext:
+    fsGroup: 1000
+
+# Web application configuration
+web:
+  # Number of replicas
+  replicaCount: 1
+  
+  # Image configuration
+  image:
+    repository: open-swe/web
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+    name: http
+  
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  # Node selector
+  nodeSelector: {}
+  
+  # Tolerations
+  tolerations: []
+  
+  # Affinity
+  affinity: {}
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  
+  # Pod security context
+  podSecurityContext:
+    fsGroup: 1000
+
+# ConfigMap configuration for non-sensitive environment variables
+config:
+  # LangGraph API URL (internal service communication)
+  langgraphApiUrl: "http://open-swe-agent:2024"
+  
+  # Next.js public API URL (for client-side requests)
+  nextPublicApiUrl: "http://localhost:3000/api"
+  
+  # Open SWE app URL (for GitHub webhooks and external references)
+  openSweAppUrl: "http://localhost:3000"
+  
+  # Port configuration
+  port: "2024"
+  
+  # Feature flags
+  skipCiUntilLastCommit: "true"
+  
+  # LangSmith configuration
+  langchainProject: "default"
+  langchainTracingV2: "true"
+  langchainTestTracking: "false"
+  
+  # GitHub App configuration (non-sensitive)
+  githubAppName: "open-swe"
+  githubAppRedirectUri: "http://localhost:3000/api/auth/github/callback"
+
+# Secrets configuration (values will be base64 encoded)
+secrets:
+  # LLM Provider API Keys
+  anthropicApiKey: ""
+  openaiApiKey: ""
+  googleApiKey: ""
+  
+  # LangSmith API Key
+  langchainApiKey: ""
+  
+  # Infrastructure
+  daytonaApiKey: ""
+  
+  # Tools
+  firecrawlApiKey: ""
+  
+  # GitHub App Secrets
+  githubAppId: ""
+  githubAppPrivateKey: ""
+  githubAppClientSecret: ""
+  githubWebhookSecret: ""
+  
+  # Encryption
+  secretsEncryptionKey: ""
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: open-swe.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: web
+        - path: /api
+          pathType: Prefix
+          service: openSwe
+        - path: /webhooks
+          pathType: Prefix
+          service: openSwe
+  tls: []
+  #  - secretName: open-swe-tls
+  #    hosts:
+  #      - open-swe.local
+
+# Service Account
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+# Autoscaling configuration
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Persistent Volume Claims (if needed for future use)
+persistence:
+  enabled: false
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+# Network Policies
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+

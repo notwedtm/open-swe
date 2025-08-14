@@ -1,0 +1,164 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "open-swe.fullname" . }}-agent
+  labels:
+    {{- include "open-swe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.openSwe.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "open-swe.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "open-swe.labels" . | nindent 8 }}
+        app.kubernetes.io/component: agent
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "open-swe.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.openSwe.podSecurityContext | nindent 8 }}
+      containers:
+        - name: agent
+          securityContext:
+            {{- toYaml .Values.openSwe.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.openSwe.image.repository }}:{{ .Values.openSwe.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.openSwe.image.pullPolicy }}
+          ports:
+            - name: {{ .Values.openSwe.service.name }}
+              containerPort: {{ .Values.openSwe.service.targetPort }}
+              protocol: TCP
+          env:
+            # Non-sensitive environment variables from ConfigMap
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: port
+            - name: LANGGRAPH_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: langgraphApiUrl
+            - name: OPEN_SWE_APP_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: openSweAppUrl
+            - name: SKIP_CI_UNTIL_LAST_COMMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: skipCiUntilLastCommit
+            - name: LANGCHAIN_PROJECT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: langchainProject
+            - name: LANGCHAIN_TRACING_V2
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: langchainTracingV2
+            - name: LANGCHAIN_TEST_TRACKING
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: langchainTestTracking
+            - name: GITHUB_APP_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-config
+                  key: githubAppName
+            # Sensitive environment variables from Secrets
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: anthropicApiKey
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: openaiApiKey
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: googleApiKey
+            - name: LANGCHAIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: langchainApiKey
+            - name: DAYTONA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: daytonaApiKey
+            - name: FIRECRAWL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: firecrawlApiKey
+            - name: GITHUB_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: githubAppId
+            - name: GITHUB_APP_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: githubAppPrivateKey
+            - name: GITHUB_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: githubWebhookSecret
+            - name: SECRETS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "open-swe.fullname" . }}-secrets
+                  key: secretsEncryptionKey
+          livenessProbe:
+            {{- toYaml .Values.openSwe.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.openSwe.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.openSwe.resources | nindent 12 }}
+          {{- with .Values.openSwe.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.openSwe.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openSwe.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openSwe.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openSwe.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

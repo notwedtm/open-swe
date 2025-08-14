@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "open-swe.fullname" . }}-config
+  labels:
+    {{- include "open-swe.labels" . | nindent 4 }}
+data:
+  # Service URLs and communication
+  langgraphApiUrl: {{ .Values.config.langgraphApiUrl | quote }}
+  nextPublicApiUrl: {{ .Values.config.nextPublicApiUrl | quote }}
+  openSweAppUrl: {{ .Values.config.openSweAppUrl | quote }}
+  
+  # Port configuration
+  port: {{ .Values.config.port | quote }}
+  
+  # Feature flags
+  skipCiUntilLastCommit: {{ .Values.config.skipCiUntilLastCommit | quote }}
+  
+  # LangSmith configuration
+  langchainProject: {{ .Values.config.langchainProject | quote }}
+  langchainTracingV2: {{ .Values.config.langchainTracingV2 | quote }}
+  langchainTestTracking: {{ .Values.config.langchainTestTracking | quote }}
+  
+  # GitHub App configuration (non-sensitive)
+  githubAppName: {{ .Values.config.githubAppName | quote }}
+  githubAppRedirectUri: {{ .Values.config.githubAppRedirectUri | quote }}

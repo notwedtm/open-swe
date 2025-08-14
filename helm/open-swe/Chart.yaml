@@ -1,7 +1,19 @@
-# Helm Chart metadata - will be populated in the next task
 apiVersion: v2
 name: open-swe
 description: A Helm chart for Open SWE - An Open-Source Asynchronous Coding Agent
 type: application
 version: 0.1.0
 appVersion: "0.0.0"
+keywords:
+  - ai
+  - coding-agent
+  - langgraph
+  - langchain
+  - automation
+home: https://github.com/langchain-ai/open-swe
+sources:
+  - https://github.com/langchain-ai/open-swe
+maintainers:
+  - name: LangChain
+    url: https://github.com/langchain-ai
+
